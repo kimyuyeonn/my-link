@@ -41,23 +41,23 @@
 ### 1.2 Mermaid UI 컴포넌트 구조도 (DOM 트리 형태)
 ```mermaid
 graph TD
-    Root[퍼블릭 프로필 페이지]
+    Root["퍼블릭 프로필 페이지"]
     
-    Root --- TopBar[상단 영역]
-    TopBar --- Share[공유하기 버튼]
+    Root --- TopBar["상단 영역"]
+    TopBar --- Share["공유하기 버튼"]
     
-    Root --- Profile[프로필 영역]
-    Profile --- Avatar((프로필 이미지))
-    Profile --- Username[@username]
-    Profile --- Bio[소개글]
+    Root --- Profile["프로필 영역"]
+    Profile --- Avatar(("프로필 이미지"))
+    Profile --- Username["@username"]
+    Profile --- Bio["소개글"]
     
-    Root --- LinkList[링크 목록 영역 - 세로 정렬]
-    LinkList --- Link1[링크 버튼 1]
-    LinkList --- Link2[링크 버튼 2]
-    LinkList --- LinkN[링크 버튼 N ...]
+    Root --- LinkList["링크 목록 영역 - 세로 정렬"]
+    LinkList --- Link1["링크 버튼 1"]
+    LinkList --- Link2["링크 버튼 2"]
+    LinkList --- LinkN["링크 버튼 N ..."]
     
-    Root --- Footer[하단 영역]
-    Footer --- Branding[Powered by MyLink 브랜딩]
+    Root --- Footer["하단 영역"]
+    Footer --- Branding["Powered by MyLink 브랜딩"]
 ```
 
 ---
@@ -100,21 +100,21 @@ graph TD
 ### 2.2 Mermaid UI 컴포넌트 구조도 (DOM 트리 형태)
 ```mermaid
 graph TD
-    Root[소유자 대시보드 페이지]
+    Root["소유자 대시보드 페이지"]
     
-    Root --- Header[상단 헤더]
-    Header --- Logo[마이링크 로고 텍스트]
-    Header --- Preview[내 프로필 보기 버튼]
+    Root --- Header["상단 헤더"]
+    Header --- Logo["마이링크 로고 텍스트"]
+    Header --- Preview["내 프로필 보기 버튼"]
     
-    Root --- Main[메인 영역]
-    Main --- AddBtn[+ 새로운 링크 추가 버튼]
-    Main --- Count[등록된 링크 개수 표시]
+    Root --- Main["메인 영역"]
+    Main --- AddBtn["+ 새로운 링크 추가 버튼"]
+    Main --- Count["등록된 링크 개수 표시"]
     
-    Root --- LinkList[링크 관리 목록]
-    LinkList --- Card1[링크 카드 1]
-    Card1 --- C1_Order[위/아래 이동 화살표 버튼]
-    Card1 --- C1_Info[제목 및 URL 텍스트]
-    Card1 --- C1_Actions[수정 / 삭제 버튼]
+    Root --- LinkList["링크 관리 목록"]
+    LinkList --- Card1["링크 카드 1"]
+    Card1 --- C1_Order["위/아래 이동 화살표 버튼"]
+    Card1 --- C1_Info["제목 및 URL 텍스트"]
+    Card1 --- C1_Actions["수정 / 삭제 버튼"]
     
-    LinkList --- Card2[링크 카드 2]
+    LinkList --- Card2["링크 카드 2"]
 ```
