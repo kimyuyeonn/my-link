@@ -85,8 +85,8 @@ export default function Page() {
         await batch.commit();
       }
 
-      // 실시간 구독
-      const q = query(linksRef, orderBy("order", "asc"));
+      // 실시간 구독 (최신순 정렬)
+      const q = query(linksRef, orderBy("createdAt", "desc"));
       const unsubscribe = onSnapshot(q, (snap) => {
         const fetchedLinks: LinkType[] = snap.docs.map((d) => {
           const data = d.data();
@@ -115,11 +115,21 @@ export default function Page() {
     };
 
     let unsubscribe: (() => void) | undefined;
-    seedAndSubscribe().then((fn) => {
-      unsubscribe = fn;
-    });
+    let isCancelled = false;
+
+    const setup = async () => {
+      const unsub = await seedAndSubscribe();
+      if (isCancelled) {
+        unsub();
+      } else {
+        unsubscribe = unsub;
+      }
+    };
+
+    setup();
 
     return () => {
+      isCancelled = true;
       if (unsubscribe) unsubscribe();
     };
   }, []);
