@@ -31,10 +31,21 @@ export default function Page() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [urlError, setUrlError] = useState("");
+  const [titleError, setTitleError] = useState("");
 
   const handleAddLink = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newUrl.trim()) return;
+    setUrlError("");
+    setTitleError("");
+    
+    const trimmedTitle = newTitle.trim();
+    if (!trimmedTitle || !newUrl.trim()) return;
+
+    if (trimmedTitle.length > 50) {
+      setTitleError("제목은 50자 이내로 입력해주세요.");
+      return;
+    }
 
     if (links.length >= 30) {
       alert("링크는 최대 30개까지만 추가할 수 있습니다.");
@@ -47,9 +58,20 @@ export default function Page() {
       formattedUrl = `https://${formattedUrl}`;
     }
 
+    // URL 유효성 검사
+    try {
+      const parsedUrl = new URL(formattedUrl);
+      if (!parsedUrl.hostname.includes(".")) {
+        throw new Error("Invalid domain");
+      }
+    } catch (err) {
+      setUrlError("올바른 웹사이트 주소를 입력해주세요. (예: yuyeonkim.dev)");
+      return;
+    }
+
     const newLink: LinkType = {
       id: `link-${Date.now()}`,
-      title: newTitle.trim(),
+      title: trimmedTitle,
       url: formattedUrl,
       isActive: true,
       order: links.length,
@@ -60,6 +82,8 @@ export default function Page() {
     setLinks([...links, newLink]);
     setNewTitle("");
     setNewUrl("");
+    setUrlError("");
+    setTitleError("");
     setIsDialogOpen(false);
   };
 
@@ -102,7 +126,18 @@ export default function Page() {
 
         {/* Admin Controls (Add Link) */}
         <div className="flex justify-center">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog 
+            open={isDialogOpen} 
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) {
+                setNewTitle("");
+                setNewUrl("");
+                setUrlError("");
+                setTitleError("");
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
                 <Plus className="w-4 h-4 mr-2" />
@@ -118,31 +153,52 @@ export default function Page() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="title" className="text-right">
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="title" className="text-right mt-3">
                       제목
                     </Label>
-                    <Input
-                      id="title"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      placeholder="예: 나의 포트폴리오"
-                      className="col-span-3"
-                      autoComplete="off"
-                    />
+                    <div className="col-span-3">
+                      <Input
+                        id="title"
+                        value={newTitle}
+                        onChange={(e) => {
+                          setNewTitle(e.target.value);
+                          if (titleError) setTitleError("");
+                        }}
+                        placeholder="예: 나의 포트폴리오"
+                        autoComplete="off"
+                        maxLength={50}
+                        className={titleError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {titleError && (
+                        <p className="text-sm text-red-500 mt-1.5 font-medium animate-in fade-in slide-in-from-top-1">
+                          {titleError}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="url" className="text-right">
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="url" className="text-right mt-3">
                       URL
                     </Label>
-                    <Input
-                      id="url"
-                      value={newUrl}
-                      onChange={(e) => setNewUrl(e.target.value)}
-                      placeholder="예: yuyeonkim.dev"
-                      className="col-span-3"
-                      autoComplete="off"
-                    />
+                    <div className="col-span-3">
+                      <Input
+                        id="url"
+                        value={newUrl}
+                        onChange={(e) => {
+                          setNewUrl(e.target.value);
+                          if (urlError) setUrlError("");
+                        }}
+                        placeholder="예: yuyeonkim.dev"
+                        autoComplete="off"
+                        className={urlError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {urlError && (
+                        <p className="text-sm text-red-500 mt-1.5 font-medium animate-in fade-in slide-in-from-top-1">
+                          {urlError}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
