@@ -14,6 +14,8 @@ import {
   getDocs,
   writeBatch,
   doc,
+  updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
 import {
@@ -26,6 +28,10 @@ import {
   Share2,
   Plus,
   Loader2,
+  Pencil,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -38,8 +44,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const LINKS_PATH = "users/anonymous/links";
 
@@ -56,10 +73,22 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Create state
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [urlError, setUrlError] = useState("");
   const [titleError, setTitleError] = useState("");
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editUrlError, setEditUrlError] = useState("");
+  const [editTitleError, setEditTitleError] = useState("");
+
+  // Delete state
+  const [deletingLink, setDeletingLink] = useState<LinkType | null>(null);
 
   // Firestore 실시간 구독 + 최초 1회 시딩
   useEffect(() => {
@@ -185,6 +214,77 @@ export default function Page() {
     } catch (err) {
       console.error("링크 추가 실패:", err);
       alert("링크 추가에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartEdit = (link: LinkType) => {
+    setEditingId(link.id);
+    setEditTitle(link.title);
+    setEditUrl(link.url);
+    setEditTitleError("");
+    setEditUrlError("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditUrl("");
+  };
+
+  const handleUpdateLink = async (id: string) => {
+    setEditTitleError("");
+    setEditUrlError("");
+
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle || !editUrl.trim()) return;
+
+    if (trimmedTitle.length > 50) {
+      setEditTitleError("제목은 50자 이내로 입력해주세요.");
+      return;
+    }
+
+    let formattedUrl = editUrl.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    try {
+      const parsedUrl = new URL(formattedUrl);
+      if (!parsedUrl.hostname.includes(".")) throw new Error("Invalid domain");
+    } catch {
+      setEditUrlError("올바른 웹사이트 주소를 입력해주세요. (예: yuyeonkim.dev)");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const linkRef = doc(db, LINKS_PATH, id);
+      await updateDoc(linkRef, {
+        title: trimmedTitle,
+        url: formattedUrl,
+        updatedAt: serverTimestamp(),
+      });
+      setEditingId(null);
+    } catch (err) {
+      console.error("링크 수정 실패:", err);
+      alert("링크 수정에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteLink = async () => {
+    if (!deletingLink) return;
+    try {
+      setIsSubmitting(true);
+      const linkRef = doc(db, LINKS_PATH, deletingLink.id);
+      await deleteDoc(linkRef);
+      setDeletingLink(null);
+    } catch (err) {
+      console.error("링크 삭제 실패:", err);
+      alert("링크 삭제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -351,42 +451,156 @@ export default function Page() {
             </div>
           ) : (
             links.map((link, index) => {
+              const isEditing = editingId === link.id;
               const Icon = link.icon ? (
                 iconMap[link.icon]
               ) : (
                 <LinkIcon className="w-5 h-5" />
               );
+
               return (
-                <Link
+                <div
                   key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-2xl outline-none group animate-in slide-in-from-bottom-8 fade-in duration-700 fill-mode-both"
+                  className="w-full group animate-in slide-in-from-bottom-8 fade-in duration-700 fill-mode-both"
                   style={{ animationDelay: `${150 * (index + 1)}ms` }}
                 >
                   <Card
-                    className="relative flex items-center p-4 min-h-[64px] transition-all duration-300 ease-out 
-                    bg-white/60 dark:bg-slate-900/40 backdrop-blur-lg border border-slate-200/60 dark:border-slate-800/60
-                    hover:-translate-y-1.5 hover:scale-[1.02] hover:bg-white/90 dark:hover:bg-slate-800/80 
-                    hover:shadow-[0_10px_40px_rgb(168,85,247,0.15)] dark:hover:shadow-[0_10px_40px_rgb(168,85,247,0.1)]
-                    hover:border-purple-500/40 dark:hover:border-purple-500/40"
+                    className={cn(
+                      "relative flex flex-col p-4 min-h-[64px] transition-all duration-300 ease-out",
+                      "bg-white/60 dark:bg-slate-900/40 backdrop-blur-lg border border-slate-200/60 dark:border-slate-800/60",
+                      !isEditing && "hover:-translate-y-1.5 hover:scale-[1.02] hover:bg-white/90 dark:hover:bg-slate-800/80 hover:shadow-[0_10px_40px_rgb(168,85,247,0.15)] dark:hover:shadow-[0_10px_40px_rgb(168,85,247,0.1)] hover:border-purple-500/40 dark:hover:border-purple-500/40",
+                      isEditing && "border-purple-500/50 ring-2 ring-purple-500/20"
+                    )}
                   >
-                    {/* Icon Container */}
-                    <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
-                      {Icon}
-                    </div>
+                    {isEditing ? (
+                      <div className="flex flex-col gap-3 w-full animate-in fade-in duration-300">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 space-y-3">
+                            <div className="space-y-1">
+                              <Input
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                placeholder="제목"
+                                className={cn("h-9", editTitleError && "border-red-500 focus-visible:ring-red-500")}
+                                autoFocus
+                              />
+                              {editTitleError && (
+                                <p className="text-[10px] text-red-500 font-medium">{editTitleError}</p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <Input
+                                value={editUrl}
+                                onChange={(e) => setEditUrl(e.target.value)}
+                                placeholder="URL"
+                                className={cn("h-9", editUrlError && "border-red-500 focus-visible:ring-red-500")}
+                              />
+                              {editUrlError && (
+                                <p className="text-[10px] text-red-500 font-medium">{editUrlError}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 rounded-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700"
+                              onClick={() => handleUpdateLink(link.id)}
+                              disabled={isSubmitting}
+                            >
+                              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+                              onClick={handleCancelEdit}
+                              disabled={isSubmitting}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between w-full">
+                        <Link
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center flex-1 gap-4 focus:outline-none"
+                        >
+                          {/* Icon Container */}
+                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
+                            {Icon}
+                          </div>
 
-                    {/* Title */}
-                    <div className="w-full text-center font-semibold text-slate-800 dark:text-slate-200 tracking-wide text-lg group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
-                      {link.title}
-                    </div>
+                          {/* Title */}
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 tracking-wide text-lg group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                            {link.title}
+                          </div>
+                        </Link>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                            onClick={() => handleStartEdit(link)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                            onClick={() => setDeletingLink(link)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </Card>
-                </Link>
+                </div>
               );
             })
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={!!deletingLink} onOpenChange={(open) => !open && setDeletingLink(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">&quot;{deletingLink?.title}&quot;</span> 링크가 삭제됩니다.
+                  </p>
+                  <p className="text-red-500 font-medium text-sm">
+                    이 작업은 되돌릴 수 없습니다.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isSubmitting}>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDeleteLink();
+                }}
+                disabled={isSubmitting}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                삭제하기
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Footer logo */}
         <div className="mt-8 mb-4 text-center">
