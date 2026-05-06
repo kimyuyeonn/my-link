@@ -1,8 +1,22 @@
-import { dummyLinks } from "@/data/links";
+"use client";
+
+import { useState } from "react";
+import { dummyLinks, Link as LinkType } from "@/data/links";
 import { Card } from "@/components/ui/card";
-import { Camera, Video, Book, Code, Briefcase, Link as LinkIcon, Share2 } from "lucide-react";
+import { Camera, Video, Book, Code, Briefcase, Link as LinkIcon, Share2, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const iconMap: Record<string, React.ReactNode> = {
   instagram: <Camera className="w-5 h-5" />,
@@ -13,6 +27,42 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export default function Page() {
+  const [links, setLinks] = useState<LinkType[]>(dummyLinks);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+
+  const handleAddLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newUrl.trim()) return;
+
+    if (links.length >= 30) {
+      alert("링크는 최대 30개까지만 추가할 수 있습니다.");
+      return;
+    }
+
+    let formattedUrl = newUrl.trim();
+    // http:// 또는 https:// 가 없으면 https:// 자동 추가
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    const newLink: LinkType = {
+      id: `link-${Date.now()}`,
+      title: newTitle.trim(),
+      url: formattedUrl,
+      isActive: true,
+      order: links.length,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLinks([...links, newLink]);
+    setNewTitle("");
+    setNewUrl("");
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="relative flex min-h-svh flex-col items-center p-6 sm:p-12 overflow-hidden selection:bg-purple-500/30">
       {/* Dynamic Background */}
@@ -50,38 +100,100 @@ export default function Page() {
           </p>
         </div>
 
+        {/* Admin Controls (Add Link) */}
+        <div className="flex justify-center">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
+                <Plus className="w-4 h-4 mr-2" />
+                새로운 링크 추가
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <form onSubmit={handleAddLink}>
+                <DialogHeader>
+                  <DialogTitle>새로운 링크 추가</DialogTitle>
+                  <DialogDescription>
+                    공유하고 싶은 웹사이트의 제목과 URL을 입력해주세요.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="title" className="text-right">
+                      제목
+                    </Label>
+                    <Input
+                      id="title"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="예: 나의 포트폴리오"
+                      className="col-span-3"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="url" className="text-right">
+                      URL
+                    </Label>
+                    <Input
+                      id="url"
+                      value={newUrl}
+                      onChange={(e) => setNewUrl(e.target.value)}
+                      placeholder="예: yuyeonkim.dev"
+                      className="col-span-3"
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={!newTitle.trim() || !newUrl.trim()}>
+                    추가하기
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
         {/* Links Area */}
         <div className="flex flex-col gap-4">
-          {dummyLinks.map((link, index) => {
-            const Icon = link.icon ? iconMap[link.icon] : <LinkIcon className="w-5 h-5" />;
-            return (
-              <Link
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-2xl outline-none group animate-in slide-in-from-bottom-8 fade-in duration-700 fill-mode-both"
-                style={{ animationDelay: `${150 * (index + 1)}ms` }}
-              >
-                <Card className="relative flex items-center p-4 min-h-[64px] transition-all duration-300 ease-out 
-                  bg-white/60 dark:bg-slate-900/40 backdrop-blur-lg border border-slate-200/60 dark:border-slate-800/60
-                  hover:-translate-y-1.5 hover:scale-[1.02] hover:bg-white/90 dark:hover:bg-slate-800/80 
-                  hover:shadow-[0_10px_40px_rgb(168,85,247,0.15)] dark:hover:shadow-[0_10px_40px_rgb(168,85,247,0.1)]
-                  hover:border-purple-500/40 dark:hover:border-purple-500/40">
-                  
-                  {/* Icon Container - Absolute positioned to the left and vertically centered */}
-                  <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
-                    {Icon}
-                  </div>
-                  
-                  {/* Title - Perfectly centered */}
-                  <div className="w-full text-center font-semibold text-slate-800 dark:text-slate-200 tracking-wide text-lg group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
-                    {link.title}
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
+          {links.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400 animate-in fade-in duration-500">
+              <p>아직 등록된 링크가 없습니다.</p>
+              <p className="text-sm mt-1">첫 번째 링크를 추가해보세요!</p>
+            </div>
+          ) : (
+            links.map((link, index) => {
+              const Icon = link.icon ? iconMap[link.icon] : <LinkIcon className="w-5 h-5" />;
+              return (
+                <Link
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-2xl outline-none group animate-in slide-in-from-bottom-8 fade-in duration-700 fill-mode-both"
+                  style={{ animationDelay: `${150 * (index + 1)}ms` }}
+                >
+                  <Card className="relative flex items-center p-4 min-h-[64px] transition-all duration-300 ease-out 
+                    bg-white/60 dark:bg-slate-900/40 backdrop-blur-lg border border-slate-200/60 dark:border-slate-800/60
+                    hover:-translate-y-1.5 hover:scale-[1.02] hover:bg-white/90 dark:hover:bg-slate-800/80 
+                    hover:shadow-[0_10px_40px_rgb(168,85,247,0.15)] dark:hover:shadow-[0_10px_40px_rgb(168,85,247,0.1)]
+                    hover:border-purple-500/40 dark:hover:border-purple-500/40">
+                    
+                    {/* Icon Container */}
+                    <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
+                      {Icon}
+                    </div>
+                    
+                    {/* Title */}
+                    <div className="w-full text-center font-semibold text-slate-800 dark:text-slate-200 tracking-wide text-lg group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                      {link.title}
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })
+          )}
         </div>
         
         {/* Footer logo */}
