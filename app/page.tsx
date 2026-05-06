@@ -69,8 +69,8 @@ export default function Page() {
                   hover:shadow-[0_10px_40px_rgb(168,85,247,0.15)] dark:hover:shadow-[0_10px_40px_rgb(168,85,247,0.1)]
                   hover:border-purple-500/40 dark:hover:border-purple-500/40">
                   
-                  {/* Icon Container - Absolute positioned to the left */}
-                  <div className="absolute left-2 sm:left-4 flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
+                  {/* Icon Container - Absolute positioned to the left and vertically centered */}
+                  <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm">
                     {Icon}
                   </div>
                   
