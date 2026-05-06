@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link as LinkType } from "@/data/links";
+import { dummyLinks, Link as LinkType } from "@/data/links";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -11,6 +11,9 @@ import {
   query,
   serverTimestamp,
   Timestamp,
+  getDocs,
+  writeBatch,
+  doc,
 } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
 import {
@@ -58,36 +61,67 @@ export default function Page() {
   const [urlError, setUrlError] = useState("");
   const [titleError, setTitleError] = useState("");
 
-  // Firestore 실시간 구독
+  // Firestore 실시간 구독 + 최초 1회 시딩
   useEffect(() => {
     const linksRef = collection(db, LINKS_PATH);
-    const q = query(linksRef, orderBy("order", "asc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedLinks: LinkType[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          url: data.url,
-          isActive: data.isActive ?? true,
-          order: data.order ?? 0,
-          icon: data.icon,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate().toISOString()
-              : data.createdAt ?? new Date().toISOString(),
-          updatedAt:
-            data.updatedAt instanceof Timestamp
-              ? data.updatedAt.toDate().toISOString()
-              : data.updatedAt ?? new Date().toISOString(),
-        };
+    const seedAndSubscribe = async () => {
+      // 컬렉션이 비어있으면 더미 데이터 시딩
+      const snapshot = await getDocs(linksRef);
+      if (snapshot.empty) {
+        const batch = writeBatch(db);
+        dummyLinks.forEach((link) => {
+          const newDoc = doc(linksRef);
+          batch.set(newDoc, {
+            title: link.title,
+            url: link.url,
+            isActive: link.isActive,
+            order: link.order,
+            icon: link.icon ?? null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+
+      // 실시간 구독
+      const q = query(linksRef, orderBy("order", "asc"));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const fetchedLinks: LinkType[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            title: data.title,
+            url: data.url,
+            isActive: data.isActive ?? true,
+            order: data.order ?? 0,
+            icon: data.icon ?? undefined,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate().toISOString()
+                : data.createdAt ?? new Date().toISOString(),
+            updatedAt:
+              data.updatedAt instanceof Timestamp
+                ? data.updatedAt.toDate().toISOString()
+                : data.updatedAt ?? new Date().toISOString(),
+          };
+        });
+        setLinks(fetchedLinks);
+        setLoading(false);
       });
-      setLinks(fetchedLinks);
-      setLoading(false);
+
+      return unsubscribe;
+    };
+
+    let unsubscribe: (() => void) | undefined;
+    seedAndSubscribe().then((fn) => {
+      unsubscribe = fn;
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const handleAddLink = async (e: React.FormEvent) => {
