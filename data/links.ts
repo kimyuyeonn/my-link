@@ -12,7 +12,7 @@ export interface Link {
 export const dummyLinks: Link[] = [
   {
     id: "link-1",
-    title: "인스타그램",
+    title: "Instagram",
     url: "https://instagram.com",
     isActive: true,
     order: 0,
@@ -22,7 +22,7 @@ export const dummyLinks: Link[] = [
   },
   {
     id: "link-2",
-    title: "유튜브",
+    title: "YouTube",
     url: "https://youtube.com",
     isActive: true,
     order: 1,
@@ -32,8 +32,8 @@ export const dummyLinks: Link[] = [
   },
   {
     id: "link-3",
-    title: "블로그",
-    url: "https://blog.example.com",
+    title: "Blog",
+    url: "https://section.blog.naver.com/BlogHome.naver?directoryNo=0&currentPage=1&groupId=0",
     isActive: true,
     order: 2,
     createdAt: new Date().toISOString(),
@@ -42,7 +42,7 @@ export const dummyLinks: Link[] = [
   },
   {
     id: "link-4",
-    title: "Github",
+    title: "GitHub",
     url: "https://github.com/kimyuyeonn",
     isActive: true,
     order: 3,
@@ -52,7 +52,7 @@ export const dummyLinks: Link[] = [
   },
   {
     id: "link-5",
-    title: "포트폴리오",
+    title: "Portfolio",
     url: "https://portfolio.example.com",
     isActive: true,
     order: 4,
