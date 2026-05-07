@@ -6,7 +6,8 @@ export interface Link {
   order: number;
   createdAt: string; // ISO string for dummy data
   updatedAt: string;
-  icon?: string; // 추후 고도화 기능 (사용자 요청 사항 반영)
+  icon?: string;
+  favicon?: string;
 }
 
 export const dummyLinks: Link[] = [
